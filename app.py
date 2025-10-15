@@ -257,7 +257,7 @@ def fetch_data():
             if not co_cd:
                 return jsonify({"error": "회사를 선택해야 합니다."}), 400
             sql = (
-                "SELECT CTRL_CD, MGM_CD, MGM_NM, REMARK_DC, USE_YN FROM LCTRL_MGM_D WHERE CO_CD = ?"
+                "SELECT H.CTRL_CD,D.MGM_CD,D.MGM_NM,D.REMARK_DC,D.USE_YN FROM LCTRL_MGM H INNER JOIN  LCTRL_MGM_D D ON H.CO_CD = D.CO_CD AND H.CTRL_CD = D.CTRL_CD WHERE D.CO_CD = ?"
             )
             params = [co_cd]
 
@@ -480,7 +480,7 @@ def fetch_data():
                 "LEFT OUTER JOIN ATAX T ON D.CO_CD = T.CO_CD AND D.ISU_DT = T.ISU_DT AND D.ISU_SQ = T.ISU_SQ AND D.LN_SQ = T.LN_SQ "
                 "LEFT OUTER JOIN AVASSET2 AV2 ON D.CO_CD = AV2.CO_CD AND D.ISU_DT = AV2.ISU_DT AND D.ISU_SQ = AV2.ISU_SQ AND D.LN_SQ = AV2.LN_SQ "
                 "LEFT OUTER JOIN SBILL SB ON D.CO_CD = SB.CO_CD AND D.ISU_DT = SB.ISU_DT AND D.ISU_SQ = SB.ISU_SQ AND D.LN_SQ = SB.LN_SQ "
-                "WHERE D.CO_CD = ? AND CONVERT(DATE, H.ISU_DT, 112) >= ? AND H.ISU_DT <= ? ORDER BY H.ISU_DT, H.ISU_SQ, D.LN_SQ"
+                "WHERE D.CO_CD = ? AND CONVERT(DATE, H.ISU_DT, 112) >= ? AND H.ISU_DT <= ?"
             )
             params = [co_cd, start_date, end_date]
 
@@ -547,26 +547,6 @@ def export_excel():
             
         split_rows = int(data.get('split_rows', 50000))
 
-        if query_name == "급여자료 추출":
-            # 급여자료 추출의 경우 템플릿을 사용하지 않고 모든 컬럼을 엑셀로 변환
-            download_filename = f'{co_cd}_{query_name}_data.zip'
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED, False) as zf:
-                for i in range(0, len(df), split_rows):
-                    chunk_df = df.iloc[i:i + split_rows]
-                    file_name = f"{co_cd}_{co_nm}_{query_name}_part_{i // split_rows + 1}.xlsx"
-
-                    excel_buffer = io.BytesIO()
-                    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                        chunk_df.to_excel(writer, index=False, sheet_name='Sheet1')
-                    excel_buffer.seek(0)
-
-                    zf.writestr(file_name, excel_buffer.getvalue())
-
-            zip_buffer.seek(0)
-            return send_file(zip_buffer, as_attachment=True, download_name=download_filename, mimetype='application/zip')
-
-        # 기존 템플릿 기반 처리
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'excel_templates')
 
@@ -587,7 +567,6 @@ def export_excel():
             "입고처리":  {"file": "입고처리_template.xlsx", "start_row": 4},
             "출고처리":  {"file": "출고처리_template.xlsx", "start_row": 4},
             "재고조정":  {"file": "재고조정_template.xlsx", "start_row": 4},
-            "기초재고":  {"file": "기초재고_template.xlsx", "start_row": 4},
             "자동전표처리":  {"file": "자동전표처리_template.xlsx", "start_row": 4},
         }
 
