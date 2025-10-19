@@ -249,9 +249,9 @@ def fetch_data():
             if not co_cd:
                 return jsonify({"error": "회사를 선택해야 합니다."}), 400
             sql = (
-                "SELECT ITEMPARENT_CD	,BOM_SQ SORT_SQ	,ITEMCHILD_CD	,JUST_QT	,LOSS_RT	,OUT_FG	,USE_YN	,REAL_QT	,ODR_FG	,START_DT	,END_DT	,REMARK_DC	FROM SBOM_WF WHERE CO_CD = ?"
+                "SELECT ITEMPARENT_CD	,BOM_SQ SORT_SQ	,ITEMCHILD_CD	,JUST_QT	,LOSS_RT	,OUT_FG	,USE_YN	,REAL_QT	,ODR_FG	,START_DT	,END_DT	,REMARK_DC	FROM SBOM_WF WHERE CO_CD = ? and itemparent_cd in (SELECT item_cd FROM SITEM WHERE co_cd = ? and use_yn = '1')"
             )
-            params = [co_cd]
+            params = [co_cd,co_cd]
 
         elif query_name == "관리내역등록":
             if not co_cd:
@@ -547,66 +547,98 @@ def export_excel():
             
         split_rows = int(data.get('split_rows', 50000))
 
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'excel_templates')
-
-        template_config = {
-            "거래처등록": {"file": "거래처등록_template.xlsx", "start_row": 4},
-            "사원정보":  {"file": "사원정보_template.xlsx", "start_row": 8},
-            "부서정보":  {"file": "부서정보_template.xlsx", "start_row": 22},
-            "사원정보2":  {"file": "사원정보2_template.xlsx", "start_row": 8},
-            "조직정보":  {"file": "조직정보_template.xlsx", "start_row": 8},
-            "주문정보":  {"file": "주문정보_template.xlsx", "start_row": 4},
-            "생산실적":  {"file": "생산입고_template.xlsx", "start_row": 4},
-            "생산출고":  {"file": "생산출고_template.xlsx", "start_row": 4},
-            "상용직정보":  {"file": "상용직정보_template.xlsx", "start_row": 8},
-            "품목등록":  {"file": "품목등록_template.xlsx", "start_row": 4},
-            "BOM등록":  {"file": "BOM등록_template.xlsx", "start_row": 4},
-            "품목군등록":  {"file": "품목군등록_template.xlsx", "start_row": 4},
-            "관리내역등록":  {"file": "관리내역등록_template.xlsx", "start_row": 4},
-            "입고처리":  {"file": "입고처리_template.xlsx", "start_row": 4},
-            "출고처리":  {"file": "출고처리_template.xlsx", "start_row": 4},
-            "재고조정":  {"file": "재고조정_template.xlsx", "start_row": 4},
-            "자동전표처리":  {"file": "자동전표처리_template.xlsx", "start_row": 4},
-        }
-
-        config = template_config.get(query_name)
-        if not config:
-            app.logger.error(f"템플릿 설정이 없음: {query_name}")
-            return jsonify({"error": f"'{query_name}'에 대한 엑셀 템플릿 설정이 없습니다."}), 400
-
-        template_filename = config.get("file")
-        start_row = config.get("start_row", 4)
-        template_path = os.path.join(TEMPLATE_FOLDER, template_filename)
-
-        if not os.path.exists(template_path):
-            app.logger.error(f"템플릿 파일을 찾을 수 없음: {template_path}")
-            return jsonify({"error": f"엑셀 템플릿 파일({template_filename})을 찾을 수 없습니다."}), 404
-        
-        app.logger.info(f"사용할 템플릿: {template_path}, 시작 행: {start_row}")
-
-        download_filename = f'{co_cd}_{query_name}_data.zip' # ZIP 파일명 생성
-
+        download_filename = f'{co_cd}_{query_name}_data.zip'  # ZIP 파일명 생성
         zip_buffer = io.BytesIO()
+
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED, False) as zf:
             for i in range(0, len(df), split_rows):
                 chunk_df = df.iloc[i:i + split_rows]
                 file_name = f"{co_cd}_{co_nm}_{query_name}_part_{i // split_rows + 1}.xlsx"
 
-                workbook = openpyxl.load_workbook(template_path)
-                worksheet = workbook.active
+                # 급여자료 추출의 경우 템플릿을 사용하지 않고 새 엑셀 파일 생성
+                if query_name == "급여자료 추출":
+                    workbook = openpyxl.Workbook()
+                    worksheet = workbook.active
+                    worksheet.title = "급여자료"
 
-                for r_idx, row_data in enumerate(chunk_df.itertuples(index=False), start=start_row):
-                    for c_idx, cell_value in enumerate(row_data, 1):
-                        if pd.isna(cell_value):
-                            cell_value = ""
-                        worksheet.cell(row=r_idx, column=c_idx, value=cell_value)
+                    # 헤더 작성
+                    for col_idx, column_name in enumerate(chunk_df.columns, start=1):
+                        worksheet.cell(row=1, column=col_idx, value=column_name)
+                        worksheet.cell(row=1, column=col_idx).font = Font(bold=True)
 
-                excel_buffer = io.BytesIO()
-                workbook.save(excel_buffer)
-                excel_buffer.seek(0)
-                
-                zf.writestr(file_name, excel_buffer.getvalue())
+                    # 데이터 작성
+                    for row_idx, row_data in enumerate(chunk_df.itertuples(index=False), start=2):
+                        for col_idx, cell_value in enumerate(row_data, start=1):
+                            if pd.isna(cell_value):
+                                cell_value = ""
+                            worksheet.cell(row=row_idx, column=col_idx, value=cell_value)
+
+                    # 열 너비 자동 조정
+                    for col_idx, column_name in enumerate(chunk_df.columns, start=1):
+                        max_length = max(
+                            len(str(cell_value)) if cell_value else 0
+                            for cell_value in [column_name] + chunk_df.iloc[:, col_idx - 1].astype(str).tolist()
+                        )
+                        worksheet.column_dimensions[get_column_letter(col_idx)].width = max_length + 2
+
+                    # 엑셀 파일을 메모리에 저장
+                    excel_buffer = io.BytesIO()
+                    workbook.save(excel_buffer)
+                    excel_buffer.seek(0)
+
+                    zf.writestr(file_name, excel_buffer.getvalue())
+                else:
+                    # 기존 템플릿 기반 처리
+                    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+                    TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'excel_templates')
+
+                    template_config = {
+                        "거래처등록": {"file": "거래처등록_template.xlsx", "start_row": 4},
+                        "사원정보": {"file": "사원정보_template.xlsx", "start_row": 8},
+                        "부서정보": {"file": "부서정보_template.xlsx", "start_row": 22},
+                        "사원정보2": {"file": "사원정보2_template.xlsx", "start_row": 8},
+                        "조직정보": {"file": "조직정보_template.xlsx", "start_row": 8},
+                        "주문정보": {"file": "주문정보_template.xlsx", "start_row": 4},
+                        "생산실적": {"file": "생산입고_template.xlsx", "start_row": 4},
+                        "생산출고": {"file": "생산출고_template.xlsx", "start_row": 4},
+                        "상용직정보": {"file": "상용직정보_template.xlsx", "start_row": 8},
+                        "품목등록": {"file": "품목등록_template.xlsx", "start_row": 4},
+                        "BOM등록": {"file": "BOM등록_template.xlsx", "start_row": 4},
+                        "품목군등록": {"file": "품목군등록_template.xlsx", "start_row": 4},
+                        "관리내역등록": {"file": "관리내역등록_template.xlsx", "start_row": 4},
+                        "입고처리": {"file": "입고처리_template.xlsx", "start_row": 4},
+                        "출고처리": {"file": "출고처리_template.xlsx", "start_row": 4},
+                        "재고조정": {"file": "재고조정_template.xlsx", "start_row": 4},
+                        "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
+                    }
+
+                    config = template_config.get(query_name)
+                    if not config:
+                        app.logger.error(f"템플릿 설정이 없음: {query_name}")
+                        return jsonify({"error": f"'{query_name}'에 대한 엑셀 템플릿 설정이 없습니다."}), 400
+
+                    template_filename = config.get("file")
+                    start_row = config.get("start_row", 4)
+                    template_path = os.path.join(TEMPLATE_FOLDER, template_filename)
+
+                    if not os.path.exists(template_path):
+                        app.logger.error(f"템플릿 파일을 찾을 수 없음: {template_path}")
+                        return jsonify({"error": f"엑셀 템플릿 파일({template_filename})을 찾을 수 없습니다."}), 404
+
+                    workbook = openpyxl.load_workbook(template_path)
+                    worksheet = workbook.active
+
+                    for r_idx, row_data in enumerate(chunk_df.itertuples(index=False), start=start_row):
+                        for c_idx, cell_value in enumerate(row_data, 1):
+                            if pd.isna(cell_value):
+                                cell_value = ""
+                            worksheet.cell(row=r_idx, column=c_idx, value=cell_value)
+
+                    excel_buffer = io.BytesIO()
+                    workbook.save(excel_buffer)
+                    excel_buffer.seek(0)
+
+                    zf.writestr(file_name, excel_buffer.getvalue())
 
         zip_buffer.seek(0)
         return send_file(zip_buffer, as_attachment=True, download_name=download_filename, mimetype='application/zip')
