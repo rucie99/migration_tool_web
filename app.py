@@ -232,7 +232,7 @@ def fetch_data():
                 "TRSUB_CD, TRSUB2_CD, SAFESTOCK_QT, COMP_DC, BARCODE_DC, WIDTH_QT, LENGTH_QT, HEIGHT_QT, DENSTY_QT, "
                 "WIDTH_UM, LENGTH_UM, HEIGHT_UM, VOLUME_QT, WEIGHT_QT, AREA_QT, VOLUME_UM, WEIGHT_UM, AREA_UM, "
                 "DAYCAPA_NB, LNSP_UM, HS_NB, MASS_CD, MASS_CONFNB, PACK_PO_QT, PACK_PO_RT, PACK_SO_QT, PACK_SO_RT, "
-                "STANDARD_TIME, LIQ_YN, REMARK_DC, AL_REMARK_DC, LIQ_FG, STANDARD_TIME_UNIT_DC, SALEVAT_UM, PURCHVAT_UM, "
+                "STANDARD_TIME,LIQ_YN, REMARK_DC, AL_REMARK_DC, LIQ_FG, STANDARD_TIME_UNIT_DC, SALEVAT_UM, PURCHVAT_UM, "
                 "'' LIQUSE_FG FROM SITEM WHERE CO_CD = ?"
             )
             params = [co_cd]
@@ -261,44 +261,36 @@ def fetch_data():
             )
             params = [co_cd]
 
-        elif query_name == "기초재고":
-            # ?가 총 10개이므로, 파라미터 10개를 순서대로 전달합니다.
+        elif query_name == "창고":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
             sql = (
-                "SELECT SUBSTRING(?, 1, 4)+'0101' AS ADJUST_DT, LI.WH_CD, LI.LC_CD AS LC_CD, '기초재고' AS REMARK_DC, "
-                "'' AS TR_CD, '' AS PLN_CD, LI.ITEM_CD, "
-                "SUM((CASE WHEN ISNULL(LI.IO_DT, '') >= SUBSTRING(?, 1, 4)+'0101' AND ISNULL(LI.IO_DT, '') <= SUBSTRING(?, 1, 4)+'1231' "
-                "THEN ISNULL(LI.IOPEN_QT, 0) ELSE 0 END) + "
-                "(CASE WHEN ISNULL(LI.IO_DT, '') >= SUBSTRING(?, 1, 4)+'0101' AND ISNULL(LI.IO_DT, '') < ? "
-                "THEN ISNULL(LI.IRCV_QT, 0) - ISNULL(LI.IISU_QT, 0) ELSE 0 END)) AS OPEN_QT, "
-                "0 AS ADJUST_UM, 0 AS ADJUST_AM, '' AS MGMT_CD, '' AS PJT_CD, ISNULL(LI.LOT_NB,'') LOT_NB, "
-                "'기초재고' AS REMARKD_DC "
-                "FROM LX_LINVTORY LI "
-                "LEFT OUTER JOIN SBASELOC ON LI.CO_CD = SBASELOC.CO_CD AND LI.WH_CD = SBASELOC.BASELOC_CD AND SBASELOC.BASELOC_FG = '0' "
-                "LEFT OUTER JOIN SLOC ON LI.CO_CD = SLOC.CO_CD AND LI.WH_CD = SLOC.BASELOC_CD AND LI.LC_CD = SLOC.LOC_CD "
-                "LEFT OUTER JOIN SITEM I ON LI.CO_CD = I.CO_CD AND LI.ITEM_CD = I.ITEM_CD "
-                "LEFT OUTER JOIN ZL_SB_ITEM_NEW ZL_SB_ITEM ON ZL_SB_ITEM.CO_CD = LI.CO_CD AND ZL_SB_ITEM.DIV_CD = LI.DIV_CD "
-                "AND ZL_SB_ITEM.P_YR = SUBSTRING(LI.IO_DT, 1, 4) AND ZL_SB_ITEM.ITEM_CD = LI.ITEM_CD "
-                "AND ZL_SB_ITEM.WH_CD = LI.WH_CD AND ZL_SB_ITEM.LC_CD = LI.LC_CD "
-                "LEFT OUTER JOIN STRADE T ON I.CO_CD = T.CO_CD AND I.TRMAIN_CD = T.TR_CD "
-                "WHERE LI.CO_CD = ? AND LI.DIV_CD = '1000' AND I.USE_YN = '1' "
-                "GROUP BY LI.CO_CD, LI.WH_CD, LI.LC_CD, LI.ITEM_CD, ISNULL(LI.LOT_NB,'') "
-                "HAVING SUM((CASE WHEN ISNULL(LI.IO_DT, '') >= SUBSTRING(?, 1, 4)+'0101' AND ISNULL(LI.IO_DT, '') <= SUBSTRING(?, 1, 4)+'1231' "
-                "THEN ISNULL(LI.IOPEN_QT, 0) ELSE 0 END) + "
-                "(CASE WHEN ISNULL(LI.IO_DT, '') >= SUBSTRING(?, 1, 4)+'0101' AND ISNULL(LI.IO_DT, '') < ? "
-                "THEN ISNULL(LI.IRCV_QT, 0) - ISNULL(LI.IISU_QT, 0) ELSE 0 END)) <> 0 "
-                "ORDER BY LI.CO_CD, LI.WH_CD, LI.LC_CD, LI.ITEM_CD"
+                "SELECT DIV_CD,BASELOC_FG,BASELOC_CD,BASELOC_NM,BASELOC_DC,USE_YN FROM SBASELOC WHERE CO_CD = ?"
+            )
+            params = [co_cd]
+
+        elif query_name == "공정":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
+            sql = (
+                "SELECT BASELOC_CD,LOC_CD,LOC_NM,TR_CD,BAD_YN,AVABSTOCK_YN,USE_YN,LOC_DC FROM SLOC WHERE CO_CD = ?"
+            )
+            params = [co_cd]
+
+        elif query_name == "프로젝트등록":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
+            sql = (
+                "SELECT CO_CD,PJT_CD,PROG_FG,PJT_NM,PJT_NMK,ATPJT_NM,ATPJT_NMK,TR_CD,PJTGRP_CD,FR_DT,TO_DT,START_DT,PJT_WORKTY,PJTRMK_DC,PJTRMK_DCK,COST_FG,PJT_TY,DEPT_CD,EMP_CD,'' PRIME_TR_CD,ORD_AM,GOYONG_NM,RSRG_NO,HJS,HCLS,DTL_DC,GOAL_DC FROM SPJT  WHERE CO_CD = ?"
+            )
+            params = [co_cd]
+        elif query_name == "기초재고":
+           
+            sql = ("SELECT V.P_YR + '0101' ADJUST_DT,V.WH_CD,V.LC_CD,'기초재고' REMARK_DC,'' TR_CD,'' PLN_CD,V.ITEM_CD,V.IOPEN ADJUST_QT,T.OPEN_UM,T.OPEN_AM,'' MGMT_CD,'' PJT_CD  FROM VL_INVLC_CUBE V LEFT OUTER JOIN LINV_TAV T ON V.CO_CD = T.CO_CD AND V.P_YR + '01' = T.SMM  AND V.ITEM_CD = T.ITEM_CD WHERE V.CO_CD = ? AND  V.P_YR = LEFT(?,4) AND IOPEN <> 0 "
             )
             params = [
-                start_date,  # 1
-                start_date,  # 2
-                start_date,  # 3
-                start_date,  # 4
-                start_date,  # 5
-                co_cd,       # 6
-                start_date,  # 7
-                start_date,  # 8
-                start_date,  # 9
-                start_date   # 10
+                co_cd,  # 1
+                start_date
             ]
 
         elif query_name == "주문정보":
@@ -326,12 +318,23 @@ def fetch_data():
                 "SELECT H.PO_FG, H.RCV_DT, H.TR_CD, H.EXCH_CD, ISNULL(H.EXCH_RT,1) EXCH_RT, H.VAT_FG, H.UMVAT_FG, "
                 "H.WH_CD, H.PLN_CD, H.REMARK_DC, D.ITEM_CD, D.PO_QT, D.RCV_QT, D.UM_FG, D.RCV_UM, D.VAT_UM, "
                 "D.RCVG_AM, D.RCVV_AM, D.RCVH_AM, D.EXCH_UM, D.EXCH_AM, D.LC_CD, D.LOT_NB, D.MGMT_CD, D.PJT_CD, "
-                "D.REMARK_DC REMARKD_DC, '' PO_NB, '' PO_SQ, '' IBL_NB, '' IBL_SQ, '' REQ_NB, '' REQ_SQ, "
+                "D.REMARK_DC REMARKD_DC, PO_NB, PO_SQ, IBL_NB, IBL_SQ, '' REQ_NB, '' REQ_SQ, "
                 "'' QC_NB, '' QC_SQ "
                 "FROM LSTOCK H "
                 "LEFT OUTER JOIN LSTOCK_D D ON H.CO_CD = D.CO_CD AND H.RCV_NB = D.RCV_NB "
                 "WHERE H.CO_CD = ? AND H.RCV_DT BETWEEN ? AND ? "
                 "ORDER BY H.CO_CD, d.RCV_NB, D.RCV_SQ"
+            )
+            params = [co_cd, start_date, end_date]
+
+        elif query_name == "발주등록":
+            if not all([co_cd, start_date, end_date]):
+                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
+            sql = (
+                "SELECT H.PO_DT, H.TR_CD, H.PO_FG, H.VAT_FG, H.EXCH_CD, D.ITEM_CD, D.DUE_DT, D.PO_QT, D.EXCH_UM, D.EXCH_AM, ISNULL(H.EXCH_RT,1) EXCH_RT, ISNULL(H.MGMT_CD,'') MGMT_CD, ISNULL(D.PJT_CD,'') PJT_CD, ISNULL(H.LC_NB,'') LC_NB, ISNULL(H.PLN_CD,'') PLN_CD, H.REMARK_DC, D.PO_UM, ISNULL(D.UM_FG,'') UM_FG, D.POG_AM, D.POGV_AM1, D.POGH_AM1, D.SHIPREQ_DT, '' REQ_FG, '' QC_FG, ISNULL(D.REMARK_DC,'') + '|' + CONVERT(NVARCHAR(3),D.PO_SQ) REMARKD_DC, '' SO_NB, '' SO_SQ, '' REQ_NB, '' MREQ_SQ, '' REQR_NB, '' REQR_SQ, TRNMTD_DC, PAYCON_DC, DELARA_DC,D.PO_NB MGM_NM, UMVAT_FG, VAT_UM " 
+                "FROM LPO H INNER JOIN LPO_D D ON H.CO_CD = D.CO_CD AND H.PO_NB = D.PO_NB "
+                "WHERE H.CO_CD = ? AND H.PO_DT BETWEEN ? AND ? "
+                "ORDER BY H.CO_CD, H.PO_NB, D.PO_SQ"
             )
             params = [co_cd, start_date, end_date]
 
@@ -384,6 +387,17 @@ def fetch_data():
                 "FROM LADJUST H "
                 "INNER JOIN LADJUST_D D ON H.CO_CD = D.CO_cD AND H.ADJUST_NB = D.ADJUST_NB "
                 "WHERE H.CO_CD = ? AND H.ADJUST_DT BETWEEN ? AND ? AND ADJUST_FG IN ('0','1','2')"
+            )
+            params = [co_cd, start_date, end_date]
+            
+        elif query_name == "재고이동":
+            if not all([co_cd, start_date, end_date]):
+                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
+            sql = (
+                "SELECT H.MOVE_DT,H.PLN_CD,H.REMARK_DC,D.ITEM_CD,D.MOVE_QT,H.FWH_CD,H.FLC_CD," 
+                "H.TWH_CD,H.TLC_CD,D.LOT_NB,D.PJT_CD,H.MGMT_CD,D.REMARK_DC REMARKD_DC "
+                "FROM LSTKMOVE H INNER JOIN LSTKMOVE_D D ON H.CO_CD = D.CO_CD AND H.MOVE_NB = D.MOVE_NB "
+                "WHERE H.CO_CD = ? AND H.MOVE_DT BETWEEN ? AND ?"
             )
             params = [co_cd, start_date, end_date]
 
@@ -605,10 +619,16 @@ def export_excel():
                         "품목등록": {"file": "품목등록_template.xlsx", "start_row": 4},
                         "BOM등록": {"file": "BOM등록_template.xlsx", "start_row": 4},
                         "품목군등록": {"file": "품목군등록_template.xlsx", "start_row": 4},
+                        "기초재고": {"file": "기초재고_template.xlsx", "start_row": 4},
                         "관리내역등록": {"file": "관리내역등록_template.xlsx", "start_row": 4},
+                        "프로젝트등록": {"file": "프로젝트등록_template.xlsx", "start_row": 4},
+                        "창고": {"file": "창고_template.xlsx", "start_row": 4},
+                        "공정": {"file": "공정_template.xlsx", "start_row": 4},
+                        "발주등록": {"file": "발주등록_template.xlsx", "start_row": 4},
                         "입고처리": {"file": "입고처리_template.xlsx", "start_row": 4},
                         "출고처리": {"file": "출고처리_template.xlsx", "start_row": 4},
                         "재고조정": {"file": "재고조정_template.xlsx", "start_row": 4},
+                        "재고이동": {"file": "재고이동_template.xlsx", "start_row": 4},
                         "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
                     }
 
