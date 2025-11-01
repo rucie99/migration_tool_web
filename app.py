@@ -401,6 +401,16 @@ def fetch_data():
             )
             params = [co_cd, start_date, end_date]
 
+        elif query_name == "회계초기이월":
+            if not all([co_cd, start_date]):
+                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
+            sql = (
+                "SELECT GISU,DIV_CD,ACCT_CD,ISU_SQ,DEPT_CD,EMP_CD,ACCT_AM,TR_CD,CT_DEPT,"
+                "'' CASH_CD,PJT_CD,'' M_EMP_CD,'' EXCH_RT,'' EXCH_CD,'' EXCH_AM,'' BL_NO FROM APREV "
+                "WHERE CO_CD = ? AND FILL_DT = LEFT(?,4)+'0101'"
+            )
+            params = [co_cd, start_date]
+
         elif query_name == "급여자료 추출":
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사, 시작일, 종료일을 모두 선택해야 합니다."}), 400
@@ -494,7 +504,8 @@ def fetch_data():
                 "LEFT OUTER JOIN ATAX T ON D.CO_CD = T.CO_CD AND D.ISU_DT = T.ISU_DT AND D.ISU_SQ = T.ISU_SQ AND D.LN_SQ = T.LN_SQ "
                 "LEFT OUTER JOIN AVASSET2 AV2 ON D.CO_CD = AV2.CO_CD AND D.ISU_DT = AV2.ISU_DT AND D.ISU_SQ = AV2.ISU_SQ AND D.LN_SQ = AV2.LN_SQ "
                 "LEFT OUTER JOIN SBILL SB ON D.CO_CD = SB.CO_CD AND D.ISU_DT = SB.ISU_DT AND D.ISU_SQ = SB.ISU_SQ AND D.LN_SQ = SB.LN_SQ "
-                "WHERE D.CO_CD = ? AND CONVERT(DATE, H.ISU_DT, 112) >= ? AND H.ISU_DT <= ?"
+                "WHERE D.CO_CD = ? AND CONVERT(DATE, H.ISU_DT, 112) >= ? AND H.ISU_DT <= ? " 
+                "ORDER BY H.ISU_DT, H.ISU_SQ, D.LN_SQ"
             )
             params = [co_cd, start_date, end_date]
 
@@ -629,6 +640,7 @@ def export_excel():
                         "출고처리": {"file": "출고처리_template.xlsx", "start_row": 4},
                         "재고조정": {"file": "재고조정_template.xlsx", "start_row": 4},
                         "재고이동": {"file": "재고이동_template.xlsx", "start_row": 4},
+                        "회계초기이월": {"file": "회계초기이월_template.xlsx", "start_row": 4},
                         "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
                     }
 
