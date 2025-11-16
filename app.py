@@ -286,11 +286,17 @@ def fetch_data():
             params = [co_cd]
         elif query_name == "기초재고":
            
-            sql = ("SELECT V.P_YR + '0101' ADJUST_DT,V.WH_CD,V.LC_CD,'기초재고' REMARK_DC,'' TR_CD,'' PLN_CD,V.ITEM_CD,V.IOPEN ADJUST_QT,T.OPEN_UM,T.OPEN_AM,'' MGMT_CD,'' PJT_CD  FROM VL_INVLC_CUBE V LEFT OUTER JOIN LINV_TAV T ON V.CO_CD = T.CO_CD AND V.P_YR + '01' = T.SMM  AND V.ITEM_CD = T.ITEM_CD WHERE V.CO_CD = ? AND  V.P_YR = LEFT(?,4) AND IOPEN <> 0 "
-            )
+            sql = ("SELECT LEFT(?,4) +'0101' ADJUST_DT,LI.WH_CD,LI.LC_CD,'기초재고' REMARK_DC,'' TR_CD,'' PLN_CD,LI.ITEM_CD, SUM(LI.IOPEN_QT) IOPEN_QT,ISNULL(T.OPEN_UM,0) OPEN_UM,ISNULL(T.OPEN_AM,0) OPEN_AM,'' MGMT_CD,'' PJT_CD,ISNULL(LI.LOT_NB,'') LOT_NB " 
+                    "FROM LX_LINVTORY LI LEFT OUTER JOIN LINV_TAV T ON LI.CO_CD = T.CO_CD AND LI.DIV_CD  = T.DIV_CD AND LI.P_YR + '01' = T.SMM AND LI.ITEM_CD = T.ITEM_CD"
+                    " WHERE LI.CO_CD = ?   AND LI.P_YR = LEFT(?,4)  "
+                    " GROUP BY LI.WH_CD,LI.LC_CD,LI.ITEM_CD,LI.IOPEN_QT,T.OPEN_AM,T.OPEN_UM,LI.LOT_NB"
+                    " HAVING SUM(LI.IOPEN_QT) <> 0"
+                    " ORDER BY LI.ITEM_CD" )
             params = [
-                co_cd,  # 1
+                start_date,
+                co_cd  ,
                 start_date
+                
             ]
 
         elif query_name == "주문정보":
