@@ -424,8 +424,8 @@ def fetch_data():
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
             sql = (
                 "SELECT H.DIV_CD AS IN_DIV_CD, H.ISU_DT AS MENU_DT, H.ISU_SQ AS MENU_SQ, D.LN_SQ AS MENU_LN_SQ, "
-                "H.ISU_DOC, H.DOCU_TY, D.DRCR_FG, D.ACCT_CD, D.TR_CD, D.TR_NM, D.ACCT_AM, D.ATTR_CD, D.RMK_DC, "
-                "T.DIV_CD VAT_DIV_CD, H.FILL_DT ISS_DT, D.CT_DEAL TAX_FG, T.NONSUB_TY, T.SUP_AM, T.DUMMY1, T.CASH_AM, "
+                "H.ISU_DOC, H.DOCU_TY, D.DRCR_FG,LEFT(D.ACCT_CD,3) +'00'+ RIGHT(D.ACCT_CD,2) ACCT_CD, D.TR_CD, D.TR_NM, D.ACCT_AM, D.ATTR_CD, D.RMK_DC, "
+                "T.DIV_CD VAT_DIV_CD, H.FILL_DT ISS_DT , D.CT_DEAL TAX_FG, T.NONSUB_TY, T.SUP_AM, T.DUMMY1, T.CASH_AM, "
                 "T.BILL_AM, D.CT_NB,"
                 "CASE WHEN D.CT_DEAL = '24' THEN D.CT_QT ELSE D.CT_AM END CT_AM, T.JEONJA_YN, T.ASSET_AM, T.ASSET_VAT, "
                 "CASE WHEN AV2.ASSET_FG = '1' THEN AV2.ITEM_DC ELSE '' END AS ASSET_FG1, "
@@ -446,7 +446,7 @@ def fetch_data():
                 "CASE WHEN AV2.ASSET_FG = '4' THEN ISNULL(AV2.VAT_AM, 0) ELSE 0 END AS VAT_AM4, "
                 "SB.BILL_NB, SB.ISS_DT ISSUE_DT, SB.DUE_DT, SB.BANK_CD FIN_CD, '' BILLCASH_CD, SB.ISU_NM, SB.ENDORS_NM, "
                 "SB.BILL_FG1, SB.BILL_FG2, SB.DEAL_FG, "
-                "CASE WHEN D.ACCT_CD IN ('13300','26300') THEN D.CT_NB ELSE '' END LACCT_CD, D.FR_DT, D.TO_DT, "
+                "CASE WHEN D.ACCT_CD IN ('13300','26300') THEN LEFT(D.CT_NB,3) + '00' + RIGHT(D.CT_NB,2) ELSE '' END LACCT_CD, CASE WHEN D.FR_DT = '00000000' THEN '' ELSE D.FR_DT END FR_DT, CASE WHEN D.TO_DT='00000000' THEN '' ELSE D.TO_DT END TO_DT, "
                 "CASE WHEN D.ACCT_CD IN ('13300','26300') THEN D.CT_DEAL ELSE '' END CALC_TY, "
                 "CASE WHEN D.DEPTCD_TY = 'C1' THEN D.CT_DEPT ELSE '' END CT_DEPT, "
                 "CASE WHEN D.DEPTCD_TY = 'C2' THEN D.CT_DEPT ELSE '' END CASH_CD, "
@@ -463,7 +463,7 @@ def fetch_data():
                 "CASE WHEN D.CTNB_TY = 'E2' THEN D.CT_NB ELSE '' END BL_NB, "
                 "CASE WHEN D.CTNB_TY = 'E3' THEN D.CT_NB ELSE '' END LC_NB, "
                 "CASE WHEN D.CTNB_TY = 'E4' THEN D.CT_NB ELSE '' END STOCK_NB, "
-                "CASE WHEN D.CTNB_TY = 'E5' THEN D.CT_NB ELSE '' END SUB_ACCT, "
+                "CASE WHEN D.CTNB_TY = 'E5' THEN LEFT(D.CT_NB,3) + '00' + RIGHT(D.CT_NB,2) ELSE ''  END SUB_ACCT, "
                 "CASE WHEN D.CTNB_TY = 'E6' THEN D.CT_NB ELSE '' END ITEM_CD, "
                 "CASE WHEN D.CTNB_TY = 'E7' THEN D.CT_NB ELSE '' END ASSET_CD, "
                 "CASE WHEN D.CTNB_TY = 'E8' THEN D.CT_NB ELSE '' END LOAN_NB, "
