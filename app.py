@@ -36,7 +36,7 @@ def get_companies():
     if not db_config:
         return jsonify({"error": "DB 정보가 없습니다."}), 400
     try:
-        conn_str = (f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
+        conn_str = (f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
         with pyodbc.connect(conn_str, timeout=10) as cnxn:
             company_df = pd.read_sql("SELECT co_cd, co_nm FROM sco ORDER BY co_nm", cnxn)
             companies = company_df.to_dict(orient='records')
@@ -523,7 +523,7 @@ def fetch_data():
         app.logger.info(f"전달할 파라미터: {params}")
         # --- 변경점 끝 ---
 
-        conn_str = (f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
+        conn_str = (f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
         with pyodbc.connect(conn_str, timeout=10) as cnxn:
             df = pd.read_sql(sql, cnxn, params=params)
 
