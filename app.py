@@ -36,7 +36,7 @@ def get_companies():
     if not db_config:
         return jsonify({"error": "DB 정보가 없습니다."}), 400
     try:
-        conn_str = (f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
+        conn_str = (f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
         with pyodbc.connect(conn_str, timeout=10) as cnxn:
             company_df = pd.read_sql("SELECT co_cd, co_nm FROM sco ORDER BY co_nm", cnxn)
             companies = company_df.to_dict(orient='records')
@@ -284,19 +284,43 @@ def fetch_data():
                 "SELECT CO_CD,PJT_CD,PROG_FG,PJT_NM,PJT_NMK,ATPJT_NM,ATPJT_NMK,TR_CD,PJTGRP_CD,FR_DT,TO_DT,START_DT,PJT_WORKTY,PJTRMK_DC,PJTRMK_DCK,COST_FG,PJT_TY,DEPT_CD,EMP_CD,'' PRIME_TR_CD,ORD_AM,GOYONG_NM,RSRG_NO,HJS,HCLS,DTL_DC,GOAL_DC FROM SPJT  WHERE CO_CD = ?"
             )
             params = [co_cd]
+        elif query_name == "납품처등록":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
+            sql = (
+                "SELECT CUST_CD,	SHIP_CD,	SHIP_NM,	ZIP_CD,	ADD_DC,	SHIP_FG,	CARGO_AM,	TREMP_NM,	PHONE_NB,	FAX_NB,	CP_NB,	EMAIL_DC,	USE_YN FROM LSHIP_BILL  WHERE CO_CD = ?"
+            )
+            params = [co_cd]
+
+        elif query_name == "물류담당자등록":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
+            sql = (
+                "SELECT PLN_CD,PLN_NM,EMP_CD,PLN_TEL,PLN_FAX,PLN_CP,PLNS_CD,FROM_DT,TO_DT,USE_YN FROM LPLNNERCD  WHERE CO_CD = ?"
+            )
+            params = [co_cd]
+        elif query_name == "고객별물류담당자등록":
+            if not co_cd:
+                return jsonify({"error": "회사를 선택해야 합니다."}), 400
+            sql = (
+                "SELECT TR_CD,PLN_CD,PURPLN_CD,OUTPLN_CD,AREA_CD,AREA_GRP,TRADE_GRP,SHIP_CD,UM_FG,POUM_FG   FROM LTRADEMGM  WHERE CO_CD = ?"
+            )
+            params = [co_cd]
         elif query_name == "기초재고":
-           
-            sql = ("SELECT LEFT(?,4) +'0101' ADJUST_DT,LI.WH_CD,LI.LC_CD,'기초재고' REMARK_DC,'' TR_CD,'' PLN_CD,LI.ITEM_CD, SUM(LI.IOPEN_QT) IOPEN_QT,ISNULL(T.OPEN_UM,0) OPEN_UM,ISNULL(T.OPEN_AM,0) OPEN_AM,'' MGMT_CD,'' PJT_CD,ISNULL(LI.LOT_NB,'') LOT_NB " 
-                    "FROM LX_LINVTORY LI LEFT OUTER JOIN LINV_TAV T ON LI.CO_CD = T.CO_CD AND LI.DIV_CD  = T.DIV_CD AND LI.P_YR + '01' = T.SMM AND LI.ITEM_CD = T.ITEM_CD"
-                    " WHERE LI.CO_CD = ?   AND LI.P_YR = LEFT(?,4)  "
-                    " GROUP BY LI.WH_CD,LI.LC_CD,LI.ITEM_CD,LI.IOPEN_QT,T.OPEN_AM,T.OPEN_UM,LI.LOT_NB"
-                    " HAVING SUM(LI.IOPEN_QT) <> 0"
-                    " ORDER BY LI.ITEM_CD" )
+            sql = (
+                "SELECT LI.DIV_CD, LEFT(?, 4) + '0101' AS ADJUST_DT, LI.WH_CD, LI.LC_CD,'기초재고' AS REMARK_DC,'' AS TR_CD,'' AS PLN_CD, LI.ITEM_CD,SUM(ISNULL(LI.IOPEN_QT, 0)) AS IOPEN_QT, MAX(ISNULL(T.OPEN_UM, 0)) AS OPEN_UM, "
+                "CASE WHEN ROW_NUMBER() OVER (PARTITION BY LI.DIV_CD, LI.ITEM_CD ORDER BY LI.LOT_NB) = 1 THEN MAX(ISNULL(T.OPEN_AM, 0)) ELSE 0 END AS OPEN_AM, "
+                "'' AS MGMT_CD, '' AS PJT_CD, ISNULL(LI.LOT_NB, '') AS LOT_NB "
+                "FROM LX_LINVTORY LI "
+                "LEFT OUTER JOIN LINV_TAV T ON LI.CO_CD = T.CO_CD AND LI.DIV_CD = T.DIV_CD AND LI.P_YR + '01' = T.SMM AND LI.ITEM_CD = T.ITEM_CD "
+                "WHERE LI.CO_CD = ? AND LI.P_YR = LEFT(?, 4) "
+                "GROUP BY LI.DIV_CD, LI.WH_CD, LI.LC_CD, LI.ITEM_CD, LI.LOT_NB "
+                "HAVING SUM(LI.IOPEN_QT) <> 0 ORDER BY LI.WH_CD,LI.LC_CD,LI.ITEM_CD, LI.LOT_NB"
+            )
             params = [
                 start_date,
-                co_cd  ,
+                co_cd,
                 start_date
-                
             ]
 
         elif query_name == "주문정보":
@@ -321,10 +345,10 @@ def fetch_data():
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
             sql = (
-                "SELECT H.PO_FG, H.RCV_DT, H.TR_CD, H.EXCH_CD, ISNULL(H.EXCH_RT,1) EXCH_RT, H.VAT_FG, H.UMVAT_FG, "
-                "H.WH_CD, H.PLN_CD, H.REMARK_DC, D.ITEM_CD, D.PO_QT, D.RCV_QT, D.UM_FG, D.RCV_UM, D.VAT_UM, "
-                "D.RCVG_AM, D.RCVV_AM, D.RCVH_AM, D.EXCH_UM, D.EXCH_AM, D.LC_CD, D.LOT_NB, D.MGMT_CD, D.PJT_CD, "
-                "D.REMARK_DC REMARKD_DC, PO_NB, PO_SQ, IBL_NB, IBL_SQ, '' REQ_NB, '' REQ_SQ, "
+                "SELECT H.DIV_CD,H.PO_FG, H.RCV_DT, H.TR_CD, H.EXCH_CD, ISNULL(H.EXCH_RT,1) EXCH_RT, H.VAT_FG, H.UMVAT_FG, "
+                "H.WH_CD, H.PLN_CD,H.RCV_NB REMARK_DC, D.ITEM_CD, D.PO_QT, D.RCV_QT, D.UM_FG, D.RCV_UM, D.VAT_UM, "
+                "D.RCVG_AM, D.RCVV_AM, D.RCVH_AM, D.EXCH_UM, D.EXCH_AM, D.LC_CD, D.LOT_NB,H.MGMT_CD, D.PJT_CD, "
+                "D.REMARK_DC REMARKD_DC, PO_NB, PO_SQ,  IBL_NB, IBL_SQ, '' REQ_NB, '' REQ_SQ, "
                 "'' QC_NB, '' QC_SQ "
                 "FROM LSTOCK H "
                 "LEFT OUTER JOIN LSTOCK_D D ON H.CO_CD = D.CO_CD AND H.RCV_NB = D.RCV_NB "
@@ -348,7 +372,7 @@ def fetch_data():
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
             sql = (
-                "SELECT H.SO_FG, H.ISU_DT, H.TR_CD, H.EXCH_CD, H.EXCH_RT, H.VAT_FG, H.UMVAT_FG, H.SHIP_CD, H.WH_CD, "
+                "SELECT H.DIV_CD,H.SO_FG, H.ISU_DT, H.TR_CD, H.EXCH_CD, H.EXCH_RT, H.VAT_FG, H.UMVAT_FG, H.SHIP_CD, H.WH_CD, "
                 "'' AS AREA_CD, H.SHIP_FG, H.PLN_CD, H.REMARK_DC, D.ITEM_CD, D.SO_QT, D.ISU_QT, D.UM_FG, D.ISU_UM, "
                 "D.VAT_UM, D.ISUG_AM, D.ISUV_AM, D.ISUH_AM, D.EXCH_UM, D.EXCH_AM, D.LC_CD, D.LOT_NB, D.MGMT_CD, "
                 "D.PJT_CD, D.REMARK_DC AS REMARKD_DC, D.SO_NB, D.SO_SQ, D.REQ_NB, D.REQ_SQ, D.QC_NB, D.QC_SQ "
@@ -363,11 +387,14 @@ def fetch_data():
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
             sql = (
-                "SELECT DOC_DT, ITEM_CD, ITEM_QT, MOVEBASELOC_CD, MOVELOC_CD, LOT_NB, PJT_CD, DOC_CD MGMT_CD, "
-                "PLN_CD, DOC_DC, BASELOC_CD, LOC_CD, EQUIP_CD "
-                "FROM LORCV_H WHERE CO_CD = ? AND DOC_DT BETWEEN ? AND ?"
+                "SELECT DOC_DT, ITEM_CD, ITEM_QT, MOVEBASELOC_CD, MOVELOC_CD, LOT_NB, PJT_CD,'' MGMT_CD, "
+                "PLN_CD,DOC_CD DOC_DC, BASELOC_CD, LOC_CD, EQUIP_CD "
+                "FROM LORCV_H WHERE CO_CD = ? AND DOC_DT BETWEEN ? AND ? "
+                "UNION ALL "
+                "SELECT DOC_DT,PITEM_CD,ITEM_QT,BASELOC_CD,LOC_CD,LOT_NB,PJT_CD,MGMT_CD,PLN_CD,DOC_CD REMARK_DC,WR_WH_CD,WR_LC_CD,EQUIP_CD FROM LPRODUCTION "
+                "WHERE CO_CD = ? AND DOC_DT BETWEEN ? AND ?"
             )
-            params = [co_cd, start_date, end_date]
+            params = [co_cd, start_date, end_date,co_cd, start_date, end_date]
 
         elif query_name == "생산출고":
             if not all([co_cd, start_date, end_date]):
@@ -378,9 +405,13 @@ def fetch_data():
                 "'' WO_CD, '' MATL_SQ, '' OP_NB "
                 "FROM LORCV_H H "
                 "LEFT OUTER JOIN LMTL_USE U ON H.CO_CD = U.CO_CD AND H.DOC_CD = U.WR_CD "
-                "WHERE H.CO_CD = ? AND U.USE_DT BETWEEN ? AND ?"
+                "WHERE H.CO_CD = ? AND U.USE_DT BETWEEN ? AND ? "
+                "union all "
+                "SELECT H.DOC_DT,D.CITEM_CD,D.USE_QT,D.BASELOC_CD,D.LOC_CD, '' PLN_CD,D.DOC_CD, H.PITEM_CD,D.LOT_NB,'' PJT_CD,'' MGMT_CD,D.REMARK_DC ,'' WO_CD, '' MATL_SQ, '' OP_NB "
+                "FROM LPRODUCTION H INNER JOIN  LPRODUCTION_D D ON H.CO_CD = D.CO_CD AND H.DOC_CD = D.DOC_CD "
+                "WHERE H.CO_CD = ? AND H.DOC_DT BETWEEN ? AND ?"
             )
-            params = [co_cd, start_date, end_date]
+            params = [co_cd, start_date, end_date,co_cd, start_date, end_date]
 
         elif query_name == "재고조정":
             if not all([co_cd, start_date, end_date]):
@@ -523,7 +554,7 @@ def fetch_data():
         app.logger.info(f"전달할 파라미터: {params}")
         # --- 변경점 끝 ---
 
-        conn_str = (f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
+        conn_str = (f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_config["server"]};DATABASE={db_config["database"]};UID={db_config["uid"]};PWD={db_config["password"]};TrustServerCertificate=yes;')
         with pyodbc.connect(conn_str, timeout=10) as cnxn:
             df = pd.read_sql(sql, cnxn, params=params)
 
@@ -639,6 +670,8 @@ def export_excel():
                         "품목군등록": {"file": "품목군등록_template.xlsx", "start_row": 4},
                         "기초재고": {"file": "기초재고_template.xlsx", "start_row": 4},
                         "관리내역등록": {"file": "관리내역등록_template.xlsx", "start_row": 4},
+                        "물류담당자등록": {"file": "물류담당자등록_template.xlsx", "start_row": 4},
+                        "고객별물류담당자등록": {"file": "고객별물류담당자등록_template.xlsx", "start_row": 4},
                         "프로젝트등록": {"file": "프로젝트등록_template.xlsx", "start_row": 4},
                         "창고": {"file": "창고_template.xlsx", "start_row": 4},
                         "공정": {"file": "공정_template.xlsx", "start_row": 4},
@@ -649,6 +682,7 @@ def export_excel():
                         "재고이동": {"file": "재고이동_template.xlsx", "start_row": 4},
                         "회계초기이월": {"file": "회계초기이월_template.xlsx", "start_row": 4},
                         "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
+                        "납품처등록": {"file": "납품처등록_template.xlsx", "start_row": 4},
                     }
 
                     config = template_config.get(query_name)
