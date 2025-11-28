@@ -341,6 +341,16 @@ def fetch_data():
             )
             params = [co_cd, start_date, end_date]
 
+        elif query_name == "수금등록":
+            if not all([co_cd, start_date, end_date]):
+                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
+            sql = (
+               "SELECT H.RCP_FG	RCPH_FG,H.RCP_DT	,H.TR_CD	,H.REF_DC	,H.PLN_CD	,H.REMARK_DC REMARKH_DC	,D.RCP_FG	RCPD_FG,D.RCPMGTR_CD	,D.RCPMG_DC	,D.JATA_FG	,D.NORMAL_AM	,D.BEFORE_AM	,D.BANK_CD	,D.ISU_DT	,D.DUE_DT	,D.REMARK_DC	,H.MGMT_CD	,D.PJT_CD "
+                "FROM LRCP H INNER JOIN LRCP_D D ON H.CO_CD = D.CO_CD AND H.RCP_NB = D.RCP_NB "
+                "WHERE H.CO_CD = ? AND H.RCP_DT >= ? and H.RCP_DT <= ? "
+            )
+            params = [co_cd, start_date, end_date]
+
         elif query_name == "입고처리":
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
@@ -683,6 +693,7 @@ def export_excel():
                         "회계초기이월": {"file": "회계초기이월_template.xlsx", "start_row": 4},
                         "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
                         "납품처등록": {"file": "납품처등록_template.xlsx", "start_row": 4},
+                        "수금등록": {"file": "수금등록_template.xlsx", "start_row": 4},
                     }
 
                     config = template_config.get(query_name)
