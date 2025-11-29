@@ -106,7 +106,7 @@ def fetch_data():
                 "'' AS ONEAI라이선스, HCLS_CD AS 직급, HRSP_CD AS 직책, ENRL_FG AS 재직구분, "
                 "EMPL_FG AS 고용구분, HOPR_CD AS 직무, JOIN_DT AS 입사일, '사용' AS 근태사용, "
                 "REFR_YN AS 내외국인여부, RSRG_NO AS 주민등록번호, FORG_NO AS 외국인등록번호, "
-                "PYSP_FG AS 급여형태, HTYP_CD AS 직종 FROM SEMP WHERE CO_CD = ? "
+                "PYSP_FG AS 급여형태, HTYP_CD AS 직종 FROM SEMP WHERE CO_CD = ? AND EMPL_FG = '001'"
             )
             params = [co_cd]
 
@@ -172,7 +172,7 @@ def fetch_data():
                 "'' AS [담당업무(영문)], '' AS [담당업무(중국어)], "
                 "'' AS [담당업무(일본어)], '' AS [외국법인소속파견자여부], "
                 "'' AS [결혼여부], '' AS [결혼일], '' AS [기타근무유형], "
-                "'' AS [기타근무시간] FROM SEMP WHERE CO_CD = ? "
+                "'' AS [기타근무시간] FROM SEMP WHERE CO_CD = ? AND EMPL_FG = '001'"
             )
             params = [co_cd]
 
@@ -208,7 +208,7 @@ def fetch_data():
                 "JOIN_DT AS [입사일], RPMC_DT AS [퇴사일], '미사용' AS [근태사용], "
                 "TEL AS [전화번호(조직)], '' AS [내선번호(조직)], '' AS [팩스번호(조직)], "
                 "RR_ZIP AS [우편번호(조직)], RSRG_ADD AS [기본주소(조직)], RSRD_ADD AS [상세주소(조직)], "
-                "'표시' AS [조직도], '표시' AS [대화/쪽지조직도] FROM SEMP WHERE CO_CD = ? "
+                "'표시' AS [조직도], '표시' AS [대화/쪽지조직도] FROM SEMP WHERE CO_CD = ?  AND EMPL_FG = '001'"
             )
             params = [co_cd]
 
@@ -338,16 +338,6 @@ def fetch_data():
                 "LEFT OUTER JOIN LSO_D D ON H.CO_CD = D.CO_CD AND H.SO_NB = D.SO_NB "
                 "WHERE H.SO_FG = '0' AND H.CO_CD = ? AND H.SO_DT BETWEEN ? AND ? "
                 "ORDER BY H.CO_CD, H.SO_NB, D.SO_SQ"
-            )
-            params = [co_cd, start_date, end_date]
-
-        elif query_name == "수금등록":
-            if not all([co_cd, start_date, end_date]):
-                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
-            sql = (
-               "SELECT H.RCP_FG	RCPH_FG,H.RCP_DT	,H.TR_CD	,H.REF_DC	,H.PLN_CD	,H.REMARK_DC REMARKH_DC	,D.RCP_FG	RCPD_FG,D.RCPMGTR_CD	,D.RCPMG_DC	,D.JATA_FG	,D.NORMAL_AM	,D.BEFORE_AM	,D.BANK_CD	,D.ISU_DT	,D.DUE_DT	,D.REMARK_DC	,H.MGMT_CD	,D.PJT_CD "
-                "FROM LRCP H INNER JOIN LRCP_D D ON H.CO_CD = D.CO_CD AND H.RCP_NB = D.RCP_NB "
-                "WHERE H.CO_CD = ? AND H.RCP_DT >= ? and H.RCP_DT <= ? "
             )
             params = [co_cd, start_date, end_date]
 
@@ -693,7 +683,6 @@ def export_excel():
                         "회계초기이월": {"file": "회계초기이월_template.xlsx", "start_row": 4},
                         "자동전표처리": {"file": "자동전표처리_template.xlsx", "start_row": 4},
                         "납품처등록": {"file": "납품처등록_template.xlsx", "start_row": 4},
-                        "수금등록": {"file": "수금등록_template.xlsx", "start_row": 4},
                     }
 
                     config = template_config.get(query_name)
