@@ -21,14 +21,13 @@ spec:
     spec:
       containers:
       - name: web-app
-        # [수정 필요] 본인의 깃허브 아이디/레포지토리명 (소문자 권장)
-        # 예: image: ghcr.io/gildong/mssql-project:latest
-        image: ghcr.io/highfreshness/migration_tool_web:0e83b8b
+        # [수정 필요] 본인 이미지 주소 확인 (ghcr.io/아이디/레포명:태그)
+        image: ghcr.io/https://github.com/highfreshness/migration_tool_web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
 ---
-# 2. Service (웹 접속 포트 개방)
+# 2. Service (App만 고정 NodePort 사용)
 apiVersion: v1
 kind: Service
 metadata:
@@ -39,6 +38,7 @@ spec:
   selector:
     app: excel-exporter
   ports:
-    - port: 5000       # 서비스 포트
-      targetPort: 5000 # 컨테이너 내부 포트
-      nodePort: 30001  # 외부(브라우저) 접속 포트
+    - name: http
+      port: 5000        # 내부 서비스 포트
+      targetPort: 5000  # 컨테이너 포트
+      nodePort: 30001   # [고정] 외부 접속 포트
