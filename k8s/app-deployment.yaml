@@ -24,7 +24,7 @@ spec:
       - name: exporter
         # [수정 필요] 본인의 깃허브 아이디와 레포지토리 이름으로 변경하세요
         # 예: image: ghcr.io/honggildong/mssql-project:latest
-        image: ghcr.io/rucie99/migration_tool_web:latest
+        image: ghcr.io/highfreshness/migration_tool_web:latest
         imagePullPolicy: Always
         envFrom:
         - secretRef:
