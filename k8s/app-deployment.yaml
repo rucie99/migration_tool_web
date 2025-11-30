@@ -22,7 +22,7 @@ spec:
       containers:
       - name: web-app
         # [수정 필요] 본인 이미지 주소 확인 (ghcr.io/아이디/레포명:태그)
-        image: ghcr.io/https://github.com/highfreshness/migration_tool_web:latest
+        image: ghcr.io/github.com/highfreshness/migration_tool_web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
