@@ -5,7 +5,7 @@ services:
     build:
       context: .                             # Dockerfile이 있는 디렉토리
       dockerfile: Dockerfile                 # 위에서 만든 Dockerfile 그대로 사용
-    container_name: my-app                   # (선택) 고정 컨테이너 이름
+    container_name: migtool                 # (선택) 고정 컨테이너 이름
     restart: unless-stopped                  # 핵심: 이 한 줄이면 끝!
     # restart 정책 상세 설명
     # - no                : 재시작 안 함 (기본값)
