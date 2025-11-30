@@ -23,11 +23,10 @@ spec:
       - name: web-app
         # [수정 필요] 본인의 깃허브 아이디/레포지토리명 (소문자 권장)
         # 예: image: ghcr.io/gildong/mssql-project:latest
-        image: ghcr.io/본인_GITHUB_아이디/본인_레포지토리_이름:latest
+        image: ghcr.io/highfreshness/migration_tool_web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
-        # 여기에 env나 envFrom이 없어야 합니다!
 ---
 # 2. Service (웹 접속 포트 개방)
 apiVersion: v1
