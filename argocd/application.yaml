@@ -8,7 +8,7 @@ spec:
   source:
     # [수정 필요] 본인의 깃허브 레포지토리 주소로 변경하세요
     # 예: repoURL: https://github.com/gildong/mssql-project.git
-    repoURL: https://github.com/highfreshness/migration_tool_web.git
+    repoURL: https://github.com/rucie99/migration_tool_web.git
     targetRevision: HEAD
     path: k8s  # ArgoCD가 바라볼 폴더 (방금 만든 k8s 폴더)
   destination:
