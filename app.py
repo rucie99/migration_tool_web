@@ -336,7 +336,7 @@ def fetch_data():
                 "CASE WHEN D.EST_SQ= 0 THEN NULL ELSE D.EST_SQ END EST_SQ, D.ITEMSET_CD "
                 "FROM LSO H "
                 "LEFT OUTER JOIN LSO_D D ON H.CO_CD = D.CO_CD AND H.SO_NB = D.SO_NB "
-                "WHERE H.SO_FG = '0' AND H.CO_CD = ? AND H.SO_DT BETWEEN ? AND ? "
+                "WHERE H.SO_FG = '0' AND H.CO_CD = ? AND H.SO_DT >=  ? AND H.SO_DT <= ? "
                 "ORDER BY H.CO_CD, H.SO_NB, D.SO_SQ"
             )
             params = [co_cd, start_date, end_date]
@@ -352,7 +352,7 @@ def fetch_data():
                 "'' QC_NB, '' QC_SQ "
                 "FROM LSTOCK H "
                 "LEFT OUTER JOIN LSTOCK_D D ON H.CO_CD = D.CO_CD AND H.RCV_NB = D.RCV_NB "
-                "WHERE H.CO_CD = ? AND H.RCV_DT BETWEEN ? AND ? "
+                "WHERE H.CO_CD = ? AND H.RCV_DT >=  ? AND H.RCV_DT <= ? "
                 "ORDER BY H.CO_CD, d.RCV_NB, D.RCV_SQ"
             )
             params = [co_cd, start_date, end_date]
@@ -363,7 +363,7 @@ def fetch_data():
             sql = (
                 "SELECT H.PO_DT, H.TR_CD, H.PO_FG, H.VAT_FG, H.EXCH_CD, D.ITEM_CD, D.DUE_DT, D.PO_QT, D.EXCH_UM, D.EXCH_AM, ISNULL(H.EXCH_RT,1) EXCH_RT, ISNULL(H.MGMT_CD,'') MGMT_CD, ISNULL(D.PJT_CD,'') PJT_CD, ISNULL(H.LC_NB,'') LC_NB, ISNULL(H.PLN_CD,'') PLN_CD, H.REMARK_DC, D.PO_UM, ISNULL(D.UM_FG,'') UM_FG, D.POG_AM, D.POGV_AM1, D.POGH_AM1, D.SHIPREQ_DT, '' REQ_FG, '' QC_FG, ISNULL(D.REMARK_DC,'') + '|' + CONVERT(NVARCHAR(3),D.PO_SQ) REMARKD_DC, '' SO_NB, '' SO_SQ, '' REQ_NB, '' MREQ_SQ, '' REQR_NB, '' REQR_SQ, TRNMTD_DC, PAYCON_DC, DELARA_DC,D.PO_NB MGM_NM, UMVAT_FG, VAT_UM " 
                 "FROM LPO H INNER JOIN LPO_D D ON H.CO_CD = D.CO_CD AND H.PO_NB = D.PO_NB "
-                "WHERE H.CO_CD = ? AND H.PO_DT BETWEEN ? AND ? "
+                "WHERE H.CO_CD = ? AND H.PO_DT >= ? AND H.PO_DT <= ? "
                 "ORDER BY H.CO_CD, H.PO_NB, D.PO_SQ"
             )
             params = [co_cd, start_date, end_date]
@@ -378,7 +378,7 @@ def fetch_data():
                 "D.PJT_CD, D.REMARK_DC AS REMARKD_DC, D.SO_NB, D.SO_SQ, D.REQ_NB, D.REQ_SQ, D.QC_NB, D.QC_SQ "
                 "FROM dbo.LDELIVER AS H "
                 "INNER JOIN dbo.LDELIVER_D AS D ON H.CO_CD = D.CO_CD AND H.ISU_NB = D.ISU_NB "
-                "WHERE H.CO_CD = ? AND H.ISU_DT BETWEEN ? AND ? "
+                "WHERE H.CO_CD = ? AND H.ISU_DT >= ? AND H.ISU_DT <= ? "
                 "ORDER BY H.CO_CD, D.ISU_NB, D.ISU_SQ"
             )
             params = [co_cd, start_date, end_date]
@@ -389,10 +389,10 @@ def fetch_data():
             sql = (
                 "SELECT DOC_DT, ITEM_CD, ITEM_QT, MOVEBASELOC_CD, MOVELOC_CD, LOT_NB, PJT_CD,'' MGMT_CD, "
                 "PLN_CD,DOC_CD DOC_DC, BASELOC_CD, LOC_CD, EQUIP_CD "
-                "FROM LORCV_H WHERE CO_CD = ? AND DOC_DT BETWEEN ? AND ? "
+                "FROM LORCV_H WHERE CO_CD = ? AND DOC_DT >=  ? AND DOC_DT <= ? "
                 "UNION ALL "
                 "SELECT DOC_DT,PITEM_CD,ITEM_QT,BASELOC_CD,LOC_CD,LOT_NB,PJT_CD,MGMT_CD,PLN_CD,DOC_CD REMARK_DC,WR_WH_CD,WR_LC_CD,EQUIP_CD FROM LPRODUCTION "
-                "WHERE CO_CD = ? AND DOC_DT BETWEEN ? AND ?"
+                "WHERE CO_CD = ? AND DOC_DT >= ? AND DOC_DT <= ?"
             )
             params = [co_cd, start_date, end_date,co_cd, start_date, end_date]
 
@@ -405,11 +405,11 @@ def fetch_data():
                 "'' WO_CD, '' MATL_SQ, '' OP_NB "
                 "FROM LORCV_H H "
                 "LEFT OUTER JOIN LMTL_USE U ON H.CO_CD = U.CO_CD AND H.DOC_CD = U.WR_CD "
-                "WHERE H.CO_CD = ? AND U.USE_DT BETWEEN ? AND ? "
+                "WHERE H.CO_CD = ? AND U.USE_DT >= ? AND  U.USE_DT <= ? "
                 "union all "
                 "SELECT H.DOC_DT,D.CITEM_CD,D.USE_QT,D.BASELOC_CD,D.LOC_CD, '' PLN_CD,D.DOC_CD, H.PITEM_CD,D.LOT_NB,'' PJT_CD,'' MGMT_CD,D.REMARK_DC ,'' WO_CD, '' MATL_SQ, '' OP_NB "
                 "FROM LPRODUCTION H INNER JOIN  LPRODUCTION_D D ON H.CO_CD = D.CO_CD AND H.DOC_CD = D.DOC_CD "
-                "WHERE H.CO_CD = ? AND H.DOC_DT BETWEEN ? AND ?"
+                "WHERE H.CO_CD = ? AND H.DOC_DT >= ? AND  H.DOC_DT <= ?"
             )
             params = [co_cd, start_date, end_date,co_cd, start_date, end_date]
 
@@ -423,7 +423,7 @@ def fetch_data():
                 "D.ADJUST_UM, D.ADJUST_AM, D.MGMT_CD, D.PJT_CD, D.LOT_NB, D.REMARK_DC REMARKD_DC "
                 "FROM LADJUST H "
                 "INNER JOIN LADJUST_D D ON H.CO_CD = D.CO_cD AND H.ADJUST_NB = D.ADJUST_NB "
-                "WHERE H.CO_CD = ? AND H.ADJUST_DT BETWEEN ? AND ? AND ADJUST_FG IN ('0','1','2')"
+                "WHERE H.CO_CD = ? AND H.ADJUST_DT >= ? AND H.ADJUST_DT <= ? AND ADJUST_FG IN ('0','1','2')"
             )
             params = [co_cd, start_date, end_date]
             
@@ -434,7 +434,7 @@ def fetch_data():
                 "SELECT H.MOVE_DT,H.PLN_CD,H.REMARK_DC,D.ITEM_CD,D.MOVE_QT,H.FWH_CD,H.FLC_CD," 
                 "H.TWH_CD,H.TLC_CD,D.LOT_NB,D.PJT_CD,H.MGMT_CD,D.REMARK_DC REMARKD_DC "
                 "FROM LSTKMOVE H INNER JOIN LSTKMOVE_D D ON H.CO_CD = D.CO_CD AND H.MOVE_NB = D.MOVE_NB "
-                "WHERE H.CO_CD = ? AND H.MOVE_DT BETWEEN ? AND ?"
+                "WHERE H.CO_CD = ? AND H.MOVE_DT >= ? AND  H.MOVE_DT <= ?"
             )
             params = [co_cd, start_date, end_date]
 
