@@ -382,7 +382,19 @@ def fetch_data():
                 "ORDER BY H.CO_CD, D.ISU_NB, D.ISU_SQ"
             )
             params = [co_cd, start_date, end_date]
-
+            
+        elif query_name == "수금등록":
+            if not all([co_cd, start_date, end_date]):
+                return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
+            sql = (
+               "SELECT H.RCP_FG RCPH_FG,H.RCP_DT,H.TR_CD,H.REF_DC,H.PLN_CD,H.REMARK_DC,D.RCP_FG,D.RCPMGTR_CD,D.RCPMG_DC,D.JATA_FG,D.NORMAL_AM,D.BEFORE_AM,"
+                "D.BANK_CD,D.ISU_DT,D.DUE_DT,D.REMARK_DC REMARKD_DC,H.MGMT_CD,D.PJT_CD " 
+                "FROM LRCP H INNER JOIN LRCP_D D ON H.CO_CD = D.CO_CD AND H.RCP_NB =D.RCP_NB "
+                "WHERE H.RCP_FG = '0' AND H.CO_CD = ? AND H.rcp_DT BETWEEN ? AND ? "
+                "ORDER BY H.RCP_NB"
+            )
+            params = [co_cd, start_date, end_date]
+            
         elif query_name == "생산실적":
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
@@ -725,4 +737,5 @@ def export_excel():
 
 # --- Flask 서버 실행 ---
 if __name__ == '__main__':
+
     app.run(host='0.0.0.0', port=5000, debug=True)
