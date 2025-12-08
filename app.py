@@ -688,6 +688,7 @@ def export_excel():
                         "창고": {"file": "창고_template.xlsx", "start_row": 4},
                         "공정": {"file": "공정_template.xlsx", "start_row": 4},
                         "발주등록": {"file": "발주등록_template.xlsx", "start_row": 4},
+                        "수금등록": {"file": "수금등록_template.xlsx", "start_row": 4},
                         "입고처리": {"file": "입고처리_template.xlsx", "start_row": 4},
                         "출고처리": {"file": "출고처리_template.xlsx", "start_row": 4},
                         "재고조정": {"file": "재고조정_template.xlsx", "start_row": 4},
@@ -739,3 +740,4 @@ def export_excel():
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+
