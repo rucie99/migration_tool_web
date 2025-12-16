@@ -429,7 +429,7 @@ def fetch_data():
             if not all([co_cd, start_date, end_date]):
                 return jsonify({"error": "회사,시작일자,종료일자 모두 선택해야 합니다."}), 400
             sql = (
-                "SELECT CASE WHEN H.ADJUST_FG='0' THEN '기초' WHEN H.ADJUST_FG='1' THEN '입고' WHEN H.ADJUST_FG='2' THEN '출고' END ADJUST_FG,H.DIV_CD "
+                "SELECT CASE WHEN H.ADJUST_FG='0' THEN '기초' WHEN H.ADJUST_FG='1' THEN '입고' WHEN H.ADJUST_FG='2' THEN '출고' END ADJUST_FG,H.DIV_CD, "
                 "H.ADJUST_DT, H.WH_CD, H.LC_CD, H.REMARK_DC, H.TR_CD, H.PLN_CD, D.ITEM_CD, "
                 "CASE WHEN H.ADJUST_FG ='0' THEN D.OPEN_QT WHEN H.ADJUST_FG = '1' THEN D.RCV_QT ELSE D.ISU_QT END ADJUST_QT, "
                 "D.ADJUST_UM, D.ADJUST_AM, D.MGMT_CD, D.PJT_CD, D.LOT_NB, D.REMARK_DC REMARKD_DC "
@@ -740,4 +740,5 @@ def export_excel():
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
