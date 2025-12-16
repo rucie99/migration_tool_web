@@ -232,7 +232,7 @@ def fetch_data():
                 "TRSUB_CD, TRSUB2_CD, SAFESTOCK_QT, COMP_DC, BARCODE_DC, WIDTH_QT, LENGTH_QT, HEIGHT_QT, DENSTY_QT, "
                 "WIDTH_UM, LENGTH_UM, HEIGHT_UM, VOLUME_QT, WEIGHT_QT, AREA_QT, VOLUME_UM, WEIGHT_UM, AREA_UM, "
                 "DAYCAPA_NB, LNSP_UM, HS_NB, MASS_CD, MASS_CONFNB, PACK_PO_QT, PACK_PO_RT, PACK_SO_QT, PACK_SO_RT, "
-                "STANDARD_TIME,LIQ_YN, REMARK_DC, AL_REMARK_DC, LIQ_FG, STANDARD_TIME_UNIT_DC, SALEVAT_UM, PURCHVAT_UM, "
+                "STANDARD_TIME,'' aaa,LIQ_YN, REMARK_DC, AL_REMARK_DC, LIQ_FG, STANDARD_TIME_UNIT_DC, SALEVAT_UM, PURCHVAT_UM, "
                 "'' LIQUSE_FG FROM SITEM WHERE CO_CD = ?"
             )
             params = [co_cd]
@@ -740,5 +740,6 @@ def export_excel():
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
